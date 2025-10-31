@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "qrcode.react": "^4.2.0",
+    "react-error-boundary": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/qrcode.react": "^1.0.5"
+  }
+}

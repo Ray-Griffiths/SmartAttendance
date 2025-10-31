@@ -1,0 +1,49 @@
+# ==========================================
+# SmartAttendance Backend .gitignore
+# ==========================================
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment folders
+env/
+venv/
+.venv/
+
+# Environment variables and secrets
+.env
+*.env
+.env.*
+
+# IDE / Editor settings
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Flask instance and database files
+instance/
+*.db
+*.sqlite3
+
+# Node-related files if you later add frontend here
+node_modules/
+dist/
+build/
+
+# Byte-compiled / optimized files
+*.egg
+*.egg-info/

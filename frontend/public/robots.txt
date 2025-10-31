@@ -1,0 +1,3 @@
+# Allow all robots full access
+User-agent: *
+Disallow:

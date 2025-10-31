@@ -1,0 +1,65 @@
+# ==========================================
+# SmartAttendance Frontend .gitignore
+# ==========================================
+
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+
+# Local environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Editor / IDE folders
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS-specific junk
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Dependency cache
+.cache/
+.parcel-cache/
+.eslintcache
+vite-cache/
+
+# Misc
+*.pid
+*.pid.lock
+*.seed
+*.tgz
+
+# Test coverage / reports
+coverage/
+*.lcov
+
+# Storybook build outputs
+out/
+storybook-static/
+
+# Optional lockfiles (only keep one if you’re using a specific package manager)
+# yarn.lock
+# package-lock.json
+# pnpm-lock.yaml

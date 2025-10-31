@@ -1,0 +1,46 @@
+{
+  "dashboard": {
+    "totalStudents": 1250,
+    "totalLecturers": 78,
+    "totalCourses": 45,
+    "totalDepartments": 12,
+    "activeSessions": 9
+  },
+  "attendance": {
+    "averageAttendanceRate": 87.5,
+    "highestAttendanceCourse": "Computer Networks",
+    "lowestAttendanceCourse": "Discrete Mathematics",
+    "recentAttendanceTrends": [
+      { "date": "2025-10-20", "percentage": 88 },
+      { "date": "2025-10-21", "percentage": 86 },
+      { "date": "2025-10-22", "percentage": 89 },
+      { "date": "2025-10-23", "percentage": 90 },
+      { "date": "2025-10-24", "percentage": 88 }
+    ]
+  },
+  "courses": [
+    { "code": "CS101", "title": "Introduction to Programming", "enrolled": 120, "attendanceRate": 91 },
+    { "code": "CS205", "title": "Data Structures", "enrolled": 95, "attendanceRate": 85 },
+    { "code": "CS310", "title": "Database Systems", "enrolled": 87, "attendanceRate": 83 },
+    { "code": "CS450", "title": "Machine Learning", "enrolled": 60, "attendanceRate": 92 },
+    { "code": "CS280", "title": "Operating Systems", "enrolled": 75, "attendanceRate": 88 },
+    { "code": "CS360", "title": "Computer Networks", "enrolled": 102, "attendanceRate": 94 }
+  ],
+  "students": {
+    "active": 1187,
+    "inactive": 63,
+    "byDepartment": [
+      { "name": "Computer Science", "count": 420 },
+      { "name": "Information Technology", "count": 310 },
+      { "name": "Software Engineering", "count": 220 },
+      { "name": "Cyber Security", "count": 180 },
+      { "name": "Data Science", "count": 120 }
+    ]
+  },
+  "lecturers": [
+    { "name": "Dr. Kwame Mensah", "department": "Computer Science", "coursesHandled": 3 },
+    { "name": "Prof. Sarah Addo", "department": "Data Science", "coursesHandled": 2 },
+    { "name": "Mr. Daniel Ofori", "department": "Software Engineering", "coursesHandled": 4 },
+    { "name": "Dr. Yaa Boateng", "department": "Cyber Security", "coursesHandled": 2 }
+  ]
+}
