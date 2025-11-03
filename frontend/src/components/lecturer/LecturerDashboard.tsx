@@ -118,7 +118,7 @@ const LecturerDashboard: React.FC<React.PropsWithChildren<{}>> = ({ children }) 
       return;
     }
 
-    const wsUrl = `${process.env.REACT_APP_WS_URL || "ws://localhost:5000"}/api/courses/ws/lecturer?token=${token}`;
+    const wsUrl = `${import.meta.env.VITE_WS_URL}/api/lecturer/ws?token=${token}`;
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {

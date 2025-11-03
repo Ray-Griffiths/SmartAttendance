@@ -1,8 +1,8 @@
 # backend/services/attendance_service.py
 from datetime import datetime
 from bson import ObjectId
-from app.database import mongo
-from app.services.geo_service import is_within_radius
+from backend.app.database import mongo
+from backend.app.services.geo_service import is_within_radius
 
 def validate_session(qr_uuid):
     """Validate if the session exists and is active."""

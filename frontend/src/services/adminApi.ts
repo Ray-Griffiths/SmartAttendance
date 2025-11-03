@@ -1,4 +1,5 @@
-import api from "./api"; // ✅ Shared axios instance
+// frontend/src/services/adminApi.ts
+import api, { setAuthToken } from "./api"; // ✅ Shared axios instance
 import type { AxiosResponse } from "axios";
 
 // ============================
@@ -39,6 +40,7 @@ export interface AnalyticsData {
   totalLecturers: number;
   totalStudents: number;
   attendanceRate?: number;
+  totalSessions?: number;
   lastUpdated?: string;
 }
 
@@ -48,10 +50,23 @@ export interface AnalyticsData {
 
 async function safeRequest<T>(fn: () => Promise<AxiosResponse<T>>): Promise<T> {
   try {
+    // ✅ Always refresh Authorization token before any API call
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      setAuthToken(token);
+    } else {
+      console.warn("⚠️ No accessToken found before request – user may not be logged in");
+    }
+
     const { data } = await fn();
     return data;
   } catch (error: any) {
-    console.error("❌ Admin API Error:", error?.response || error);
+    console.error("❌ Admin API Error:", {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data,
+      url: error?.config?.url,
+    });
     throw error.response?.data || error;
   }
 }
@@ -111,7 +126,7 @@ export const getCourseAnalytics = (courseId: string) =>
 // ============================
 
 export const getSystemLogs = () =>
-  safeRequest<SystemLog[]>(() => api.get("/api/admin/logs")); // <-- added for SystemLogs.tsx
+  safeRequest<SystemLog[]>(() => api.get("/api/admin/logs")); // <-- used by SystemLogs.tsx
 
 export const clearSystemLogs = () =>
   safeRequest<{ message: string }>(() => api.delete("/api/admin/logs/clear"));
@@ -162,3 +177,18 @@ export const getAttendanceSummary = (range?: string) =>
 // Fetch recent system logs with limit
 export const getRecentLogs = (limit = 5) =>
   safeRequest<SystemLog[]>(() => api.get(`/api/admin/logs?limit=${limit}`));
+
+
+// ============================
+// ✅ Connection Test Utility (Optional)
+// ============================
+
+export const testAdminConnection = async () => {
+  console.log("🧩 Testing Admin API connection...");
+  try {
+    const response = await api.get("/api/admin/ping");
+    console.log("✅ Admin API Connected:", response.data);
+  } catch (err) {
+    console.error("🚨 Admin API Connection Failed:", err);
+  }
+};

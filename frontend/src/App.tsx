@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 
 // ============================
 // Components & Layouts
@@ -36,6 +36,28 @@ import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 // Main App Component
 // ============================
 const App: React.FC = () => {
+  const [authChecked, setAuthChecked] = useState(false);
+  const location = useLocation();
+
+  // Check if token exists before rendering routes
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      console.log("✅ Token detected in App.tsx:", token);
+    } else {
+      console.warn("⚠️ No access token found in App.tsx");
+    }
+    setAuthChecked(true);
+  }, [location]);
+
+  if (!authChecked) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Global Navbar */}
@@ -53,21 +75,27 @@ const App: React.FC = () => {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
+          {/* ============================ */}
           {/* Admin Protected Routes */}
+          {/* ============================ */}
           <Route
             path="/admin/*"
             element={
               <RequireAdmin>
-                <Routes>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="users" element={<ManageUsers />} />
-                  <Route path="logs" element={<SystemLogs />} />
-                </Routes>
+                <Outlet />
               </RequireAdmin>
             }
-          />
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users" element={<ManageUsers />} />
+            <Route path="logs" element={<SystemLogs />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
+          </Route>
 
+          {/* ============================ */}
           {/* Lecturer Protected Routes */}
+          {/* ============================ */}
           <Route
             path="/lecturer/*"
             element={
@@ -76,31 +104,34 @@ const App: React.FC = () => {
               </RequireLecturer>
             }
           >
-            {/* Redirect /lecturer → /lecturer/dashboard */}
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<LecturerDashboard />} />
             <Route path="students" element={<StudentsList />} />
             <Route path="student-management" element={<StudentManagementPage />} />
             <Route path="courses" element={<CourseList />} />
             <Route path="attendances" element={<AttendanceList />} />
-            {/* Fallback to dashboard for unknown lecturer routes */}
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Route>
 
+          {/* ============================ */}
           {/* Student Protected Routes */}
+          {/* ============================ */}
           <Route
             path="/student/*"
             element={
               <RequireStudent>
-                <Routes>
-                  <Route index element={<StudentDashboard />} />
-                  <Route path="attendance" element={<MyAttendance />} />
-                </Routes>
+                <Outlet />
               </RequireStudent>
             }
-          />
+          >
+            <Route index element={<StudentDashboard />} />
+            <Route path="attendance" element={<MyAttendance />} />
+            <Route path="*" element={<Navigate to="attendance" replace />} />
+          </Route>
 
+          {/* ============================ */}
           {/* 404 Page */}
+          {/* ============================ */}
           <Route
             path="*"
             element={

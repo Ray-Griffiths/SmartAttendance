@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
+import { setAuthToken } from "@/services/api"; // ✅ Import to ensure header updates instantly
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,21 +22,32 @@ const LoginPage: React.FC = () => {
       const user = await login({ email, password });
       toast.success(`Welcome back, ${user.user.name}!`);
 
-      // Redirect based on role
-      switch (user.user.role) {
-        case "admin":
-          navigate("/admin");
-          break;
-        case "lecturer":
-          navigate("/lecturer/dashboard"); // ✅ Updated to match nested route
-          break;
-        case "student":
-          navigate("/student");
-          break;
-        default:
-          navigate("/"); // fallback
-          break;
+      // ✅ Ensure token is ready
+      const token = user.access_token;
+      if (token) {
+        setAuthToken(token);
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user.user));
+        console.log("✅ Token confirmed in LoginPage:", token);
       }
+
+      // ✅ Small delay to ensure re-render with token before redirect
+      setTimeout(() => {
+        switch (user.user.role) {
+          case "admin":
+            navigate("/admin", { replace: true });
+            break;
+          case "lecturer":
+            navigate("/lecturer/dashboard", { replace: true });
+            break;
+          case "student":
+            navigate("/student", { replace: true });
+            break;
+          default:
+            navigate("/", { replace: true });
+            break;
+        }
+      }, 150);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Login failed. Check your credentials.");
     } finally {

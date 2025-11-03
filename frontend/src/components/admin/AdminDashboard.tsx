@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import type { User } from "@/services/adminApi";
+import type { User, AnalyticsData } from "@/services/adminApi";
 import {
   Card,
   CardContent,
@@ -77,7 +77,7 @@ interface AttendanceSummary {
 interface LogEntry {
   id: string;
   action: string;
-  userId?: string; // optional
+  userId?: string;
   timestamp: string;
 }
 
@@ -102,22 +102,27 @@ const AdminDashboard: React.FC = () => {
 
   // ---------------- Fetch Data ----------------
   const fetchData = async () => {
+    console.log("📊 Fetching admin dashboard data...");
     setLoading(true);
     setError(null);
+
     try {
-      // Analytics
-      const analytics = await getAnalytics();
+      // ✅ Fetch analytics (typed)
+      const analytics: AnalyticsData = await getAnalytics();
+      console.log("✅ Analytics:", analytics);
+
       setStats({
-        totalStudents: analytics.totalUsers,
-        totalLecturers: analytics.totalLecturers,
-        activeCourses: analytics.totalCourses,
-        totalSessions: 0,
+        totalStudents: analytics.totalStudents ?? analytics.totalUsers ?? 0,
+        totalLecturers: analytics.totalLecturers ?? 0,
+        activeCourses: analytics.totalCourses ?? 0,
+        totalSessions: analytics.totalSessions ?? 0,
       });
 
-      // Courses
+      // ✅ Fetch courses
       const courses = await getCourses();
+      console.log("✅ Courses:", courses);
 
-      // Attendance summaries
+      // ✅ Fetch attendance summaries per course
       const attendanceData = await Promise.all(
         courses.map(async (course) => {
           const courseAnalytics = await getCourseAnalytics(course.id);
@@ -128,19 +133,22 @@ const AdminDashboard: React.FC = () => {
           };
         })
       );
+      console.log("✅ Attendance summaries:", attendanceData);
       setAttendanceSummaries(attendanceData);
 
-      // Recent logs
+      // ✅ Fetch system logs
       const logsRes = await getSystemLogs();
+      console.log("✅ Logs:", logsRes);
       setLogs(
         logsRes.slice(0, 5).map((log) => ({
           id: log.id,
           action: log.action,
           userId: log.userId,
-          timestamp: log.timestamp ?? new Date().toISOString(), // ensure string
+          timestamp: log.timestamp ?? new Date().toISOString(),
         }))
       );
     } catch (err: any) {
+      console.error("❌ Dashboard fetch failed:", err);
       setError("Failed to load dashboard data");
       toast.error("Failed to load dashboard data");
     } finally {
@@ -150,40 +158,75 @@ const AdminDashboard: React.FC = () => {
 
   // ---------------- WebSocket ----------------
   const connectWebSocket = () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.warn("⚠️ No token found for WebSocket connection");
+      return;
+    }
 
-    const wsUrl = `${process.env.REACT_APP_WS_URL || "ws://localhost:5000"}/api/admin/ws?token=${token}`;
+    const wsUrl = `${import.meta.env.VITE_WS_URL}?token=${token}`;
+    console.log("🌐 Connecting to Admin WebSocket:", wsUrl);
     wsRef.current = new WebSocket(wsUrl);
 
-    wsRef.current.onopen = () => console.log("Admin WS connected");
+    wsRef.current.onopen = () => {
+      console.log("✅ Admin WebSocket connected");
+      toast.success("Real-time updates connected");
+    };
+
     wsRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.operation === "create" && data.resource === "log") {
-        const newLog: LogEntry = {
-          id: data.log.id,
-          action: data.log.action,
-          userId: data.log.userId,
-          timestamp: data.log.timestamp ?? new Date().toISOString(),
-        };
-        setLogs((prev) => [newLog, ...prev].slice(0, 5));
-        toast.info(`New log: ${data.log.action}`);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("📩 WS Message:", data);
+
+        // ✅ Handle new logs
+        if (data.resource === "log" && data.operation === "create") {
+          const newLog: LogEntry = {
+            id: data.log.id,
+            action: data.log.action,
+            userId: data.log.userId,
+            timestamp: data.log.timestamp ?? new Date().toISOString(),
+          };
+          setLogs((prev) => [newLog, ...prev].slice(0, 5));
+          toast.info(`New log: ${data.log.action}`);
+        }
+
+        // ✅ Handle analytics update
+        if (data.resource === "analytics" && data.operation === "update") {
+          console.log("📈 WS Analytics update received:", data);
+          fetchData();
+        }
+      } catch (err) {
+        console.error("⚠️ WS parse error:", err);
       }
     };
-    wsRef.current.onclose = () => console.warn("Admin WS disconnected");
+
+    wsRef.current.onclose = () => {
+      console.warn("⚠️ Admin WebSocket disconnected");
+      toast.warning("Real-time updates disconnected");
+      setTimeout(connectWebSocket, 5000);
+    };
+
+    wsRef.current.onerror = (err) => {
+      console.error("❌ WS Error:", err);
+      toast.error("WebSocket connection error");
+    };
   };
 
   // ---------------- Handlers ----------------
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUser.email.trim() || !newUser.name.trim()) return toast.error("Name and Email are required");
+    if (!newUser.email.trim() || !newUser.name.trim()) {
+      return toast.error("Name and Email are required");
+    }
 
     try {
+      console.log("👤 Creating user:", newUser);
       await createUser(newUser);
       setIsCreateUserOpen(false);
       toast.success(`User "${newUser.email}" created`);
       fetchData();
-    } catch {
+    } catch (err) {
+      console.error("❌ Failed to create user:", err);
       toast.error("Failed to create user");
     }
   };
@@ -193,11 +236,13 @@ const AdminDashboard: React.FC = () => {
     if (!newCourseTitle.trim()) return toast.error("Course title required");
 
     try {
+      console.log("📘 Creating course:", newCourseTitle);
       await createCourse({ name: newCourseTitle });
       setIsCreateCourseOpen(false);
       toast.success(`Course "${newCourseTitle}" created`);
       fetchData();
-    } catch {
+    } catch (err) {
+      console.error("❌ Failed to create course:", err);
       toast.error("Failed to create course");
     }
   };
@@ -220,6 +265,7 @@ const AdminDashboard: React.FC = () => {
     toast.success("Attendance data exported");
   };
 
+  // ---------------- Lifecycle ----------------
   useEffect(() => {
     fetchData();
     connectWebSocket();

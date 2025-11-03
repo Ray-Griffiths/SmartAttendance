@@ -20,7 +20,6 @@ import { toast } from "sonner";
 
 import { getCourses, CourseSummary as APICourse, createCourse } from "@/services/lecturerApi";
 
-
 // Local type for UI consistency
 interface LocalCourse {
   id: string;
@@ -83,7 +82,7 @@ const CourseList: React.FC<CourseListProps> = ({ courses: initialCourses = [], o
     }
   };
 
-    // Create course handler
+  // Create course handler
   const handleCreateCourse = async (data: CourseFormValues) => {
     try {
       // Map form title -> API name
@@ -109,7 +108,6 @@ const CourseList: React.FC<CourseListProps> = ({ courses: initialCourses = [], o
       toast.error(err.message || "Failed to create course");
     }
   };
-
 
   // WebSocket for real-time updates
   useEffect(() => {
@@ -147,88 +145,112 @@ const CourseList: React.FC<CourseListProps> = ({ courses: initialCourses = [], o
     };
   }, [sortBy]);
 
+  // ✅ Fixed: fetch only once or when initialCourses changes (removed sortBy to prevent loop)
   useEffect(() => {
     if (!initialCourses.length) fetchCourses();
-  }, [initialCourses, sortBy]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCourses]);
+
+  // ✅ Optional: re-sort locally when sortBy changes (no refetch)
+  useEffect(() => {
+    setCourses((prev) =>
+      [...prev].sort((a, b) =>
+        sortBy === "title" ? a.title.localeCompare(b.title) : a.code.localeCompare(b.code)
+      )
+    );
+  }, [sortBy]);
 
   const handleRetry = () => fetchCourses();
   const toggleSort = () => setSortBy(sortBy === "title" ? "code" : "title");
 
   // Render loading, error, empty states
-  if (loading) return (
-    <Card className="border-0 shadow-sm">
-      <CardContent className="p-4 flex items-center justify-center">
-        <Loader2 className="animate-spin mr-2 h-5 w-5 text-primary" />
-        <p className="text-sm text-muted-foreground">Loading your courses...</p>
-      </CardContent>
-    </Card>
-  );
+  if (loading)
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4 flex items-center justify-center">
+          <Loader2 className="animate-spin mr-2 h-5 w-5 text-primary" />
+          <p className="text-sm text-muted-foreground">Loading your courses...</p>
+        </CardContent>
+      </Card>
+    );
 
-  if (error) return (
-    <Card className="border-0 shadow-sm">
-      <CardContent className="p-4">
-        <Alert variant="destructive">
-          <AlertCircle className="h-5 w-5" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-          <Button variant="outline" size="sm" className="mt-2" onClick={handleRetry}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Retry
-          </Button>
-        </Alert>
-      </CardContent>
-    </Card>
-  );
-
-  if (!courses.length) return (
-    <Card className="border-0 shadow-sm">
-      <CardContent className="p-4">
-        <p className="text-sm text-muted-foreground">No courses created yet.</p>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="mt-2">
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Course
+  if (error)
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-5 w-5" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+            <Button variant="outline" size="sm" className="mt-2" onClick={handleRetry}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Course</DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleCreateCourse)} className="space-y-4">
-                <FormField control={form.control} name="code" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Course Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="CS101" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="title" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Course Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Intro to Programming" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Course
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
-  );
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+
+  if (!courses.length)
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4">
+          <p className="text-sm text-muted-foreground">No courses created yet.</p>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="mt-2">
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Course
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Course</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleCreateCourse)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Course Code</FormLabel>
+                        <FormControl>
+                          <Input placeholder="CS101" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Course Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Intro to Programming" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                      {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Create Course
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
+    );
 
   // Render course list
   return (
@@ -253,30 +275,40 @@ const CourseList: React.FC<CourseListProps> = ({ courses: initialCourses = [], o
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(handleCreateCourse)} className="space-y-4">
-                    <FormField control={form.control} name="code" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Course Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="CS101" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="title" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Course Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Intro to Programming" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Course Code</FormLabel>
+                          <FormControl>
+                            <Input placeholder="CS101" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Course Title</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Intro to Programming" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <div className="flex gap-2">
                       <Button type="submit" disabled={form.formState.isSubmitting}>
                         {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Create Course
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                        Cancel
+                      </Button>
                     </div>
                   </form>
                 </Form>
@@ -288,7 +320,10 @@ const CourseList: React.FC<CourseListProps> = ({ courses: initialCourses = [], o
       <CardContent className="p-4">
         <ul className="space-y-2 max-h-[60vh] overflow-y-auto">
           {courses.map((course) => (
-            <li key={course.id} className="p-3 bg-background rounded-md border border-border flex justify-between items-center">
+            <li
+              key={course.id}
+              className="p-3 bg-background rounded-md border border-border flex justify-between items-center"
+            >
               <div className="flex items-center gap-3">
                 <BookOpen className="h-5 w-5 text-primary" />
                 <div>

@@ -1,29 +1,39 @@
-import React, { useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { Navigate } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
+import React, { useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { Navigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 
 /**
  * Protects routes that require an admin role.
- * Redirects unauthenticated users to login,
+ * Waits for auth to load, redirects unauthenticated users to login,
  * and displays an unauthorized message for non-admins.
  */
 const RequireAdmin: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
+  // Show toast once for unauthorized users
   useEffect(() => {
-    if (user && user.role !== 'admin') {
-      toast.error('❌ You are not authorized to view this page');
+    if (!loading && user && user.role !== "admin") {
+      toast.error("❌ You are not authorized to view this page");
     }
-  }, [user]);
+  }, [user, loading]);
 
-  if (!user) {
-    // Not logged in
-    return <Navigate to="/auth/login" replace />;
+  // Show loading indicator while auth context initializes
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-muted-foreground text-lg">Checking authentication...</p>
+      </div>
+    );
   }
 
-  if (user.role !== 'admin') {
-    // Unauthorized
+  // Redirect unauthenticated users to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Display unauthorized message for non-admins
+  if (user.role !== "admin") {
     return (
       <>
         <Toaster position="top-right" />
@@ -37,6 +47,7 @@ const RequireAdmin: React.FC<{ children: React.ReactElement }> = ({ children }) 
     );
   }
 
+  // Authorized: render children
   return children;
 };
 

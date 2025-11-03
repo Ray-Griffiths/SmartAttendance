@@ -3,8 +3,10 @@
 from flask import Blueprint, request, jsonify
 from bson import ObjectId
 from datetime import datetime
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, verify_jwt_in_request, get_jwt_identity
 from werkzeug.security import generate_password_hash
+from flask_sock import Sock  # ✅ Added
+import json, time, threading
 
 from backend.app.database import mongo
 from backend.app.middlewares.role_required import role_required
@@ -208,7 +210,6 @@ def get_course_students(course_id):
 @jwt_required()
 @role_required(["admin"])
 def get_dashboard():
-    """Get admin dashboard statistics"""
     total_students = mongo.db.students.count_documents({})
     total_lecturers = mongo.db.lecturers.count_documents({})
     total_courses = mongo.db.courses.count_documents({})
@@ -228,7 +229,6 @@ def get_dashboard():
 @jwt_required()
 @role_required(["admin"])
 def get_all_users():
-    """Get all users across collections for frontend"""
     admins = list(mongo.db.admins.find())
     lecturers = list(mongo.db.lecturers.find())
     students = list(mongo.db.students.find())
@@ -248,3 +248,114 @@ def get_all_users():
         all_users.append(serialize_user(student))
 
     return jsonify(all_users), 200
+
+
+# ===================== Analytics & Logs =======================
+
+@admin_bp.route("/analytics", methods=["GET"])
+@jwt_required()
+@role_required(["admin"])
+def get_admin_analytics():
+    try:
+        users_count = mongo.db.users.count_documents({})
+        lecturers_count = mongo.db.lecturers.count_documents({})
+        students_count = mongo.db.students.count_documents({})
+        attendance_records = mongo.db.attendance.count_documents({})
+        return jsonify({
+            "total_users": users_count,
+            "total_lecturers": lecturers_count,
+            "total_students": students_count,
+            "attendance_records": attendance_records
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/logs", methods=["GET"])
+@jwt_required()
+@role_required(["admin"])
+def get_system_logs():
+    try:
+        logs = list(mongo.db.system_logs.find().sort("timestamp", -1).limit(100))
+        for log in logs:
+            log["_id"] = str(log["_id"])
+        return jsonify({"logs": logs}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ===================== Course Analytics =======================
+
+@admin_bp.route("/courses/<course_id>/analytics", methods=["GET"])
+@jwt_required()
+@role_required(["admin"])
+def get_course_analytics(course_id):
+    course, err_response, err_code = get_course_or_404(course_id)
+    if err_response:
+        return err_response, err_code
+
+    course_id_obj = ObjectId(course_id)
+    total_students = len(course.get("student_ids", []))
+    total_sessions = mongo.db.sessions.count_documents({"course_id": course_id_obj})
+
+    attended_sessions = mongo.db.attendance.count_documents(
+        {"course_id": course_id_obj, "status": "present"}
+    )
+    absent_sessions = mongo.db.attendance.count_documents(
+        {"course_id": course_id_obj, "status": "absent"}
+    )
+
+    attendance_rate = 0
+    if total_sessions > 0 and total_students > 0:
+        attendance_rate = round(
+            (attended_sessions / (total_sessions * total_students)) * 100, 2
+        )
+
+    return jsonify({
+        "course_id": str(course_id_obj),
+        "course_name": course.get("name"),
+        "total_students": total_students,
+        "total_sessions": total_sessions,
+        "attended_sessions": attended_sessions,
+        "absent_sessions": absent_sessions,
+        "attendance_rate": attendance_rate,
+    }), 200
+
+
+# ===================== ✅ Real-Time WebSocket =======================
+
+def register_admin_ws(sock: Sock):
+    @sock.route("/api/admin/ws")
+    def admin_ws(ws):
+        """WebSocket endpoint for live admin analytics updates"""
+        try:
+            # Basic token extraction
+            query = ws.environ.get("QUERY_STRING", "")
+            token = None
+            if query.startswith("token="):
+                token = query.replace("token=", "")
+            if not token:
+                ws.send(json.dumps({"error": "Missing token"}))
+                ws.close()
+                return
+
+            ws.send(json.dumps({"status": "connected", "message": "Admin WS ready"}))
+
+            # Stream periodic updates
+            while True:
+                data = {
+                    "timestamp": time.strftime("%H:%M:%S"),
+                    "total_students": mongo.db.students.count_documents({}),
+                    "total_lecturers": mongo.db.lecturers.count_documents({}),
+                    "total_courses": mongo.db.courses.count_documents({}),
+                    "total_sessions": mongo.db.sessions.count_documents({}),
+                }
+                ws.send(json.dumps(data))
+                time.sleep(5)
+
+        except Exception as e:
+            print("❌ WebSocket error:", str(e))
+            try:
+                ws.close()
+            except:
+                pass

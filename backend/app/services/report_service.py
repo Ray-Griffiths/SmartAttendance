@@ -1,8 +1,8 @@
 # backend/services/report_service.py
 from datetime import datetime
 from bson import ObjectId
-from app.database import mongo
-from app.utils.serializers import serialize_attendance
+from backend.app.database import mongo
+from backend.app.utils.serializers import serialize_attendance
 
 def generate_attendance_report(course_id, start_date=None, end_date=None):
     """

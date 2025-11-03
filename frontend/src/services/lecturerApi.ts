@@ -1,4 +1,4 @@
-import api from "./api"; // ✅ Use the shared axios instance from api.ts
+import api from "./api"; // ✅ Use the shared axios instance
 import type { AxiosError } from "axios";
 
 // ============================
@@ -61,24 +61,33 @@ export interface AnalyticsResponse {
   dateRange?: { from?: string; to?: string };
 }
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatarUrl?: string;
+}
+
 // ============================
 // 🎓 Lecturer API Endpoints
 // ============================
 
+// ✅ Fixed: Added /api prefix to all routes
 export const getCourses = () =>
-  safeRequest<CourseSummary[]>(() => api.get("/lecturer/courses"));
+  safeRequest<CourseSummary[]>(() => api.get("/api/lecturer/courses"));
 
 export const createCourse = (payload: {
-  code: string;
+  code?: string;
   name: string;
   description?: string;
 }) =>
-  safeRequest<CourseSummary>(() => api.post("/lecturer/courses", payload));
+  safeRequest<CourseSummary>(() => api.post("/api/lecturer/courses", payload));
 
 export const getSessions = async (courseId?: string) => {
   if (courseId) {
     return safeRequest<SessionSummary[]>(() =>
-      api.get(`/lecturer/courses/${courseId}/sessions`)
+      api.get(`/api/lecturer/courses/${courseId}/sessions`)
     );
   }
 
@@ -89,7 +98,7 @@ export const getSessions = async (courseId?: string) => {
     courses.map(async (course) => {
       try {
         const sessions = await safeRequest<SessionSummary[]>(() =>
-          api.get(`/lecturer/courses/${course.id}/sessions`)
+          api.get(`/api/lecturer/courses/${course.id}/sessions`)
         );
         sessions.forEach((s) => {
           if (!s.courseId) s.courseId = course.id;
@@ -104,6 +113,11 @@ export const getSessions = async (courseId?: string) => {
   return allSessions;
 };
 
+export const getSessionsByCourse = (courseId: string) =>
+  safeRequest<SessionSummary[]>(() =>
+    api.get(`/api/lecturer/courses/${courseId}/sessions`)
+  );
+
 export const createSession = (payload: {
   courseId: string;
   session_date?: string;
@@ -114,21 +128,31 @@ export const createSession = (payload: {
 }) => {
   const { courseId, ...body } = payload;
   return safeRequest<SessionSummary>(() =>
-    api.post(`/lecturer/courses/${courseId}/sessions`, body)
+    api.post(`/api/lecturer/courses/${courseId}/sessions`, body)
   );
 };
 
+export const createSessionByCourse = (courseId: string, startTime: string) =>
+  safeRequest<SessionSummary>(() =>
+    api.post(`/api/lecturer/courses/${courseId}/sessions`, { startTime })
+  );
+
 export const startSession = (sessionId: string, courseId?: string) => {
   const endpoint = courseId
-    ? `/lecturer/courses/${courseId}/sessions/${sessionId}/start`
-    : `/lecturer/sessions/${sessionId}/start`;
+    ? `/api/lecturer/courses/${courseId}/sessions/${sessionId}/start`
+    : `/api/lecturer/sessions/${sessionId}/start`;
 
   return safeRequest<SessionSummary>(() => api.post(endpoint));
 };
 
+export const closeSession = (sessionId: string) =>
+  safeRequest<SessionSummary>(() =>
+    api.post(`/api/lecturer/sessions/${sessionId}/close`)
+  );
+
 export const getAttendanceBySession = (sessionId: string) =>
   safeRequest<AttendanceRecord[]>(() =>
-    api.get(`/lecturer/sessions/${sessionId}/attendance`)
+    api.get(`/api/lecturer/sessions/${sessionId}/attendance`)
   );
 
 export const postAttendance = (
@@ -136,7 +160,17 @@ export const postAttendance = (
   payload: { studentId: string; method?: string }
 ) =>
   safeRequest<AttendanceRecord>(() =>
-    api.post(`/lecturer/sessions/${sessionId}/attendance`, payload)
+    api.post(`/api/lecturer/sessions/${sessionId}/attendance`, payload)
+  );
+
+export const markAttendance = (sessionId: string, data: any) =>
+  safeRequest<AttendanceRecord>(() =>
+    api.post(`/api/lecturer/sessions/${sessionId}/attendance`, data)
+  );
+
+export const markManualAttendance = (sessionId: string, studentId: string) =>
+  safeRequest<AttendanceRecord>(() =>
+    api.post(`/api/lecturer/sessions/${sessionId}/attendance/manual`, { studentId })
   );
 
 export const getCourseAnalytics = (courseId: string, from?: string, to?: string) => {
@@ -145,8 +179,36 @@ export const getCourseAnalytics = (courseId: string, from?: string, to?: string)
   if (to) params.to = to;
 
   return safeRequest<AnalyticsResponse>(() =>
-    api.get(`/lecturer/courses/${courseId}/analytics`, { params })
+    api.get(`/api/lecturer/courses/${courseId}/analytics`, { params })
   );
+};
+
+// ============================
+// 👥 Student Management
+// ============================
+
+export const getStudentsByCourse = (courseId: string) =>
+  safeRequest<any[]>(() =>
+    api.get(`/api/lecturer/courses/${courseId}/students`)
+  );
+
+export const getCourseStudents = async (courseId: string) => {
+  const res = await api.get(`/api/lecturer/courses/${courseId}/students`);
+  return res.data;
+};
+
+export const addStudentToCourse = async (courseId: string, indexNumber: string) => {
+  const res = await api.post(`/api/lecturer/courses/${courseId}/students`, { indexNumber });
+  return res.data;
+};
+
+export const importStudentsCsv = async (courseId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await api.post(`/api/lecturer/courses/${courseId}/students/import`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
 };
 
 // ============================
@@ -159,70 +221,4 @@ export const setAuthToken = (token: string | null): void => {
   } else {
     delete api.defaults.headers.common["Authorization"];
   }
-};
-
-export interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string;
-}
-
-export const markAttendance = (sessionId: string, data: any) =>
-  safeRequest<AttendanceRecord>(() =>
-    api.post(`/lecturer/sessions/${sessionId}/attendance`, data)
-  );
-
-// ============================
-// 🆕 New Functions Added
-// ============================
-
-/** ✅ Get all sessions for a specific course */
-export const getSessionsByCourse = (courseId: string) =>
-  safeRequest<SessionSummary[]>(() =>
-    api.get(`/lecturer/courses/${courseId}/sessions`)
-  );
-
-/** ✅ Get all students enrolled in a course */
-export const getStudentsByCourse = (courseId: string) =>
-  safeRequest<any[]>(() =>
-    api.get(`/lecturer/courses/${courseId}/students`)
-  );
-
-/** ✅ Create a new session for a course (simplified call) */
-export const createSessionByCourse = (courseId: string, startTime: string) =>
-  safeRequest<SessionSummary>(() =>
-    api.post(`/lecturer/courses/${courseId}/sessions`, { startTime })
-  );
-
-/** ✅ Close an active session */
-export const closeSession = (sessionId: string) =>
-  safeRequest<SessionSummary>(() =>
-    api.post(`/lecturer/sessions/${sessionId}/close`)
-  );
-
-/** ✅ Mark attendance manually */
-export const markManualAttendance = (sessionId: string, studentId: string) =>
-  safeRequest<AttendanceRecord>(() =>
-    api.post(`/lecturer/sessions/${sessionId}/attendance/manual`, { studentId })
-  );
-
-
-export const getCourseStudents = async (courseId: string) => {
-  const res = await api.get(`/lecturer/courses/${courseId}/students`);
-  return res.data;
-};
-
-export const addStudentToCourse = async (courseId: string, indexNumber: string) => {
-  const res = await api.post(`/lecturer/courses/${courseId}/students`, { indexNumber });
-  return res.data;
-};
-
-export const importStudentsCsv = async (courseId: string, file: File) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  const res = await api.post(`/lecturer/courses/${courseId}/students/import`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return res.data;
 };
