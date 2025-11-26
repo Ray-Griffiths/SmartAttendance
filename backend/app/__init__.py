@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
+from flask_sock import Sock
 from dotenv import load_dotenv
 
 from .config.settings import config
@@ -15,6 +16,7 @@ load_dotenv()
 # Extensions (initialized later)
 jwt = JWTManager()
 mail = Mail()
+sock = Sock()
 
 def create_app(config_name='development'):
     app = Flask(__name__)
@@ -26,6 +28,7 @@ def create_app(config_name='development'):
     # ---------- Extensions ----------
     jwt.init_app(app)
     mail.init_app(app)
+    sock.init_app(app)
 
     # ---------- CORS ----------
     allowed_origins = app.config.get('CORS_ORIGINS', ['*'])
@@ -61,14 +64,21 @@ def create_app(config_name='development'):
     from .routes.auth_routes import auth_bp
     from .routes.student_routes import student_bp
     from .routes.lecturer_routes import lecturer_bp
-    from .routes.admin_routes import admin_bp
+    from .routes.lecturer_routes import lecturer_bp, register_lecturer_ws
+    from .routes.admin_routes import admin_bp, register_admin_ws
     from .routes.log_routes import log_bp
 
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(student_bp, url_prefix='/api/student')
-    app.register_blueprint(lecturer_bp, url_prefix='/api/lecturer')
-    app.register_blueprint(admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(log_bp, url_prefix='/api/logs')
+    # Blueprints already define their own `url_prefix` inside their modules.
+    # Register them without an extra prefix to avoid doubling paths
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(student_bp)
+    app.register_blueprint(lecturer_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(log_bp)
+    
+    # Register WebSocket routes
+    register_admin_ws(sock)
+    register_lecturer_ws(sock)
 
     # ---------- Health ----------
     @app.route('/')

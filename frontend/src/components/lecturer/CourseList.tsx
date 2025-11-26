@@ -111,10 +111,11 @@ const CourseList: React.FC<CourseListProps> = ({ courses: initialCourses = [], o
 
   // WebSocket for real-time updates
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("accessToken");
     if (!token) return;
 
-    const wsUrl = `${process.env.REACT_APP_WS_URL || "ws://localhost:5000"}/api/courses/ws/lecturer?token=${token}`;
+    const wsBase = import.meta.env.VITE_WS_URL || "ws://127.0.0.1:5000";
+    const wsUrl = `${wsBase}/api/courses/ws/lecturer?token=${token}`;
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onmessage = (event) => {

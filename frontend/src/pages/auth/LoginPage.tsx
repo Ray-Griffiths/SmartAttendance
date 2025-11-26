@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "@/services/authApi";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { setAuthToken } from "@/services/api"; // ✅ Import to ensure header updates instantly
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,37 +19,33 @@ const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const user = await login({ email, password });
-      toast.success(`Welcome back, ${user.user.name}!`);
+      // ✅ Use AuthContext login - it handles token storage and state updates
+      await authLogin(email, password);
+      toast.success("Login successful! Redirecting...");
 
-      // ✅ Ensure token is ready
-      const token = user.access_token;
-      if (token) {
-        setAuthToken(token);
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user.user));
-        console.log("✅ Token confirmed in LoginPage:", token);
+      // ✅ Redirect based on role after AuthContext updates
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setTimeout(() => {
+          switch (user.role) {
+            case "admin":
+              navigate("/admin/dashboard", { replace: true });
+              break;
+            case "lecturer":
+              navigate("/lecturer/dashboard", { replace: true });
+              break;
+            case "student":
+              navigate("/student", { replace: true });
+              break;
+            default:
+              navigate("/", { replace: true });
+              break;
+          }
+        }, 100);
       }
-
-      // ✅ Small delay to ensure re-render with token before redirect
-      setTimeout(() => {
-        switch (user.user.role) {
-          case "admin":
-            navigate("/admin", { replace: true });
-            break;
-          case "lecturer":
-            navigate("/lecturer/dashboard", { replace: true });
-            break;
-          case "student":
-            navigate("/student", { replace: true });
-            break;
-          default:
-            navigate("/", { replace: true });
-            break;
-        }
-      }, 150);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Login failed. Check your credentials.");
+      toast.error(err?.message || "Login failed. Check your credentials.");
     } finally {
       setLoading(false);
     }

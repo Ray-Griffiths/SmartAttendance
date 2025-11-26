@@ -25,8 +25,8 @@ const LecturerSignupPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // Only Lecturer role allowed
-      const user = await register({ name, email, password, role: "Lecturer" });
+      // Only Lecturer role allowed (use lowercase role expected by API)
+      const user = await register({ name, email, password, role: "lecturer" });
       toast.success(`Account created successfully for ${user.user.name}!`);
       navigate("/login");
     } catch (err: any) {

@@ -48,14 +48,15 @@ const AttendanceList: React.FC<AttendanceListProps> = ({ sessionId = null }) => 
   useEffect(() => {
     if (!sessionId) return;
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("accessToken");
     if (!token) {
       setError("No authentication token found");
       toast.error("No authentication token found");
       return;
     }
 
-    const wsUrl = `${process.env.REACT_APP_WS_URL || "ws://localhost:5000"}/api/attendance/ws/${sessionId}?token=${token}`;
+    const wsBase = import.meta.env.VITE_WS_URL || "ws://127.0.0.1:5000";
+    const wsUrl = `${wsBase}/api/attendance/ws/${sessionId}?token=${token}`;
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {

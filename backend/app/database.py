@@ -11,12 +11,15 @@ def init_db(app):
     """
     mongo.init_app(app)
 
-    # Import models here to avoid circular imports
+    # Import and call ensure_all_indexes from models to set up database indexes
     try:
         from app.models import ensure_all_indexes
-        ensure_all_indexes()
-    except ImportError:
-        # If models or ensure_all_indexes isn't ready yet, just skip
-        print("⚠️  Skipping ensure_all_indexes (not found)")
+        with app.app_context():
+            ensure_all_indexes()
+            print("[OK] Database indexes ensured")
+    except ImportError as e:
+        print(f"[WARN] Could not ensure indexes (import error): {e}")
+    except Exception as e:
+        print(f"[WARN] Error ensuring indexes: {e}")
 
     return mongo

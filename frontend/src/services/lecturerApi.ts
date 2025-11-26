@@ -199,7 +199,7 @@ export const getCourseStudents = async (courseId: string) => {
 
 export const addStudentToCourse = async (courseId: string, indexNumber: string) => {
   const res = await api.post(`/api/lecturer/courses/${courseId}/students`, { indexNumber });
-  return res.data;
+  return res.data.student;
 };
 
 export const importStudentsCsv = async (courseId: string, file: File) => {
@@ -208,6 +208,25 @@ export const importStudentsCsv = async (courseId: string, file: File) => {
   const res = await api.post(`/api/lecturer/courses/${courseId}/students/import`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return res.data;
+};
+
+export const previewImportStudents = async (courseId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await api.post(`/api/lecturer/courses/${courseId}/students/import/preview`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};
+
+export const getImportJob = async (jobId: string) => {
+  const res = await api.get(`/api/imports/${jobId}`);
+  return res.data;
+};
+
+export const exportStudents = async (courseId: string) => {
+  const res = await api.get(`/api/lecturer/courses/${courseId}/students/export`, { responseType: 'blob' });
   return res.data;
 };
 

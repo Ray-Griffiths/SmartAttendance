@@ -164,7 +164,8 @@ const AdminDashboard: React.FC = () => {
       return;
     }
 
-    const wsUrl = `${import.meta.env.VITE_WS_URL}?token=${token}`;
+    const wsBase = import.meta.env.VITE_WS_URL || "ws://127.0.0.1:5000";
+    const wsUrl = `${wsBase}/api/admin/ws?token=${token}`;
     console.log("🌐 Connecting to Admin WebSocket:", wsUrl);
     wsRef.current = new WebSocket(wsUrl);
 

@@ -69,8 +69,8 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
   );
 
   if (data?.access_token) {
-    // ✅ Use consistent token key
-    localStorage.setItem("token", data.access_token);
+    // ✅ Use consistent token key - "accessToken" to match AuthContext
+    localStorage.setItem("accessToken", data.access_token);
     localStorage.setItem("user", JSON.stringify(data.user));
 
     // ✅ Immediately set header
@@ -84,7 +84,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
 
 // 🔹 Logout
 export function logout(): void {
-  localStorage.removeItem("token");
+  localStorage.removeItem("accessToken");
   localStorage.removeItem("user");
   setAuthToken(undefined);
 }
@@ -96,7 +96,7 @@ export async function register(payload: RegisterPayload): Promise<AuthResponse> 
   );
 
   if (data?.access_token) {
-    localStorage.setItem("token", data.access_token);
+    localStorage.setItem("accessToken", data.access_token);
     localStorage.setItem("user", JSON.stringify(data.user));
     setAuthToken(data.access_token);
   }
@@ -111,7 +111,7 @@ export async function refreshToken(): Promise<string | null> {
       api.post("/api/auth/refresh")
     );
     if (data.access_token) {
-      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("accessToken", data.access_token);
       setAuthToken(data.access_token);
       return data.access_token;
     }
@@ -166,5 +166,9 @@ export function getCurrentUserRole(): "admin" | "lecturer" | "student" | null {
 }
 
 export function getAuthToken(): string | null {
-  return localStorage.getItem("token");
+  try {
+    return localStorage.getItem("accessToken");
+  } catch {
+    return null;
+  }
 }

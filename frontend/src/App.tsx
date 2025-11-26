@@ -14,17 +14,17 @@ import RequireStudent from "@/components/student/RequireStudent";
 // ============================
 import HomePage from "./pages/HomePage";
 
-import LecturerDashboard from "./components/lecturer/LecturerDashboard";
+import LecturerDashboard from "./components/lecturer/LecturerDashboardModern";
 import CourseList from "./components/lecturer/CourseList";
 import AttendanceList from "./components/lecturer/AttendanceList";
 import StudentsList from "./components/lecturer/StudentList";
 import StudentManagementPage from "./components/lecturer/StudentManagementPage";
 
-import AdminDashboard from "./components/admin/AdminDashboard";
+import AdminDashboard from "./components/admin/AdminDashboardModern";
 import ManageUsers from "./components/admin/ManageUsers";
 import SystemLogs from "./components/admin/SystemLogs";
 
-import StudentDashboard from "./components/student/StudentDashboard";
+import StudentDashboard from "./components/student/StudentDashboardModern";
 import MyAttendance from "./components/student/MyAttendance";
 
 import LoginPage from "@/pages/auth/LoginPage";

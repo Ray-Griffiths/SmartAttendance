@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { getProfile, getAuthToken } from "@/services/authApi";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,22 +31,18 @@ const LecturerHeader: React.FC<LecturerHeaderProps> = ({ onLogout }) => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAuthToken();
         if (!token) {
           navigate("/login");
           return;
         }
 
-        const res = await axios.get<UserProfile>(
-          `${import.meta.env.VITE_API_URL || ""}/api/users/me`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        setUser(res.data);
+        const profile = await getProfile();
+        setUser(profile);
       } catch (err: any) {
         console.error("Profile fetch failed:", err);
         toast.error("Session expired, please log in again.");
-        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
         navigate("/login");
       } finally {
         setLoading(false);
@@ -59,7 +55,7 @@ const LecturerHeader: React.FC<LecturerHeaderProps> = ({ onLogout }) => {
   // Logout handler
   const handleLogout = () => {
     toast.info("Logging out...");
-    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
     onLogout?.();
     navigate("/login");
   };

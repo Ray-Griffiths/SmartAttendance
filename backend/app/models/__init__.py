@@ -6,10 +6,6 @@ from .session import Session
 from .attendance import Attendance
 from .setting import Setting
 from .system_log import SystemLog
-from flask_pymongo import PyMongo
-
-mongo = PyMongo()
-
 
 __all__ = [
     "User",

@@ -4,11 +4,11 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from geopy.distance import geodesic
 
-from backend.app.models import mongo
+from backend.app.database import mongo
 from backend.app.utils.serializers import serialize_student, serialize_course, serialize_attendance
 from backend.app.middlewares.role_required import role_required
 
-student_bp = Blueprint("student_bp", __name__, url_prefix="/api/students")
+student_bp = Blueprint("student_bp", __name__, url_prefix="/api/student")
 
 # ======================= Helper Functions =======================
 def check_student_or_admin_access(student_id):
@@ -28,7 +28,7 @@ def check_student_or_admin_access(student_id):
 # ======================= Student CRUD =======================
 @student_bp.route("/", methods=["GET"])
 @jwt_required()
-@role_required("admin")
+@role_required(["admin"])
 def get_students():
     """Admin only: List all students."""
     students = mongo.db.students.find()
@@ -62,7 +62,7 @@ def update_student(student_id):
 
 @student_bp.route("/<student_id>", methods=["DELETE"])
 @jwt_required()
-@role_required("admin")
+@role_required(["admin"])
 def delete_student(student_id):
     mongo.db.students.delete_one({"_id": ObjectId(student_id)})
     return jsonify({"message": "Student deleted successfully"}), 200

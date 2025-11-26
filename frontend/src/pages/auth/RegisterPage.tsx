@@ -28,8 +28,8 @@ const RegisterPage: React.FC = () => {
     }
 
     try {
-      const user = await register({ name, email, password, role });
-      toast.success(`Lecturer account created for ${user.user.name}!`);
+      const response = await register({ name, email, password, role });
+      toast.success(`Lecturer account created for ${response.user.name}!`);
       navigate("/login");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Registration failed.");

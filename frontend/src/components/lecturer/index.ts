@@ -1,4 +1,4 @@
-export { default as LecturerDashboard } from './LecturerDashboard';
+export { default as LecturerDashboard } from './LecturerDashboardModern';
 export { default as CourseList } from './CourseList';
 export { default as MarkAttendance } from './MarkAttendance';
 export { default as StudentList } from './StudentList';

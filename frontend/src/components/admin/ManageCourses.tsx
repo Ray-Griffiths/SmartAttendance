@@ -80,11 +80,11 @@ const ManageCourses: React.FC = () => {
     try {
       const user = users.find((u) => u.name === lecturerName);
       const lecturerId: string | undefined = user?.id ?? undefined;
-      const updated = await updateCourse(id, { lecturerId });
+      // Send update to backend (adapter will map lecturerId -> lecturer_id)
+      await updateCourse(id, { lecturerId });
+      // Backend returns only a message by default; update local UI state directly
       setCourses(
-        courses.map((c) =>
-          c.id === id ? { ...updated, lecturer: lecturerName, isEditing: false } : c
-        )
+        courses.map((c) => (c.id === id ? { ...c, lecturer: lecturerName, isEditing: false } : c))
       );
       toast.success("Lecturer updated successfully");
     } catch (err) {

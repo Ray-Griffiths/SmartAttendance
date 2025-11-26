@@ -14,6 +14,7 @@ export interface StatsCardProps {
   percent?: string | number;
   trend?: TrendType;
   accentColor?: AccentColor | string;
+  gradient?: string;
   className?: string;
   loading?: boolean;
   onClick?: () => void;
@@ -27,6 +28,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
   percent,
   trend = null,
   accentColor = "blue",
+  gradient,
   className = "",
   loading = false,
   onClick,
@@ -94,7 +96,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
         )}
       </div>
 
-      <div className={`${styles.iconContainer} ${styles[`${accentColor}Bg`]}`}>
+      <div className={`${styles.iconContainer} ${styles[`${accentColor}Bg`]} ${gradient ? `bg-gradient-to-br ${gradient}` : ""}`}>
         {Icon ? (
           <Icon
             className={styles.icon}

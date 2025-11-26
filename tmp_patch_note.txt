@@ -1,0 +1,2 @@
+Patch will update AdminDashboardModern.tsx: - add truncate helper - make sparklines responsive - wrap KPI values with sparkline in flex so text and sparkline align - use Sparklines width/height props
+Note: apply_patch tool requires an explanation field; reattempting apply_patch with explanation.

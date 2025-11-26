@@ -46,6 +46,7 @@ const PAGE_SIZE = 10;
 export default function SystemLogs(): JSX.Element {
   const [logs, setLogs] = useState<ApiSystemLog[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | ApiSystemLog["type"]>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -55,12 +56,15 @@ export default function SystemLogs(): JSX.Element {
   useEffect(() => {
     const fetchLogs = async () => {
       setLoading(true);
+      setError(null);
       try {
         const data = await getSystemLogs();
         setLogs(data);
       } catch (err) {
         console.error(err);
-        toast.error("Failed to fetch system logs");
+        const message = (err as any)?.message || "Failed to fetch system logs";
+        toast.error(message);
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -136,6 +140,24 @@ export default function SystemLogs(): JSX.Element {
           aria-label="Loading..."
           className="animate-spin w-8 h-8 text-gray-500"
         />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">System Logs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-red-600">Error loading logs: {error}</div>
+            <div className="mt-4">
+              <Button onClick={() => window.location.reload()}>Retry</Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
